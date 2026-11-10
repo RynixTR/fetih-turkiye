@@ -1,0 +1,23 @@
+{
+  "name": "Fetih Türkiye",
+  "short_name": "FetihTR",
+  "description": "Gerçek zamanlı çok oyunculu bilgi yarışması ve harita fethi oyunu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1d",
+  "theme_color": "#0a0f1d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 256x256",
+      "type": "image/svg+xml"
+    }
+  ]
+}
