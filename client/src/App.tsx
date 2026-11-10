@@ -14,6 +14,7 @@ import { ReactionOverlay } from './components/ReactionOverlay.js';
 import { HowToPlayModal } from './components/HowToPlayModal.js';
 import { SettingsModal } from './components/SettingsModal.js';
 import { ConnectionModal } from './components/ConnectionModal.js';
+import { EliminationModal } from './components/EliminationModal.js';
 import { sound } from './components/AudioEngine.js';
 import { haptic } from './components/Haptics.js';
 
@@ -34,6 +35,16 @@ export const App: React.FC = () => {
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(sound.enabled);
+  const [eliminationModalData, setEliminationModalData] = useState<{
+    isOpen: boolean;
+    conquerorName?: string;
+    rank?: number;
+  }>({ isOpen: false });
+
+  const sessionTokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    sessionTokenRef.current = sessionToken;
+  }, [sessionToken]);
 
   // Time ticker for countdown bars
   const [, setTick] = useState<number>(0);
@@ -160,6 +171,13 @@ export const App: React.FC = () => {
     newSocket.on('player_eliminated', data => {
       sound.playElimination();
       haptic.elimination();
+      if (data?.eliminatedPlayerId && data.eliminatedPlayerId === sessionTokenRef.current) {
+        setEliminationModalData({
+          isOpen: true,
+          conquerorName: data.conquerorPlayerName,
+          rank: data.eliminatedRank
+        });
+      }
     });
 
     newSocket.on('doomsday_alert', data => {
@@ -291,6 +309,7 @@ export const App: React.FC = () => {
             onToggleSound={handleToggleSound}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+            onLeaveGame={handleResetToHome}
             isDoomsday={gameState.isDoomsdayActive}
           />
         )}
@@ -385,6 +404,14 @@ export const App: React.FC = () => {
           isReconnecting={isReconnecting}
           kickedMessage={kickedMessage}
           onReset={handleResetToHome}
+        />
+
+        <EliminationModal
+          isOpen={eliminationModalData.isOpen}
+          conquerorName={eliminationModalData.conquerorName}
+          eliminatedRank={eliminationModalData.rank}
+          onClose={() => setEliminationModalData(prev => ({ ...prev, isOpen: false }))}
+          onLeaveGame={handleResetToHome}
         />
       </main>
     </div>

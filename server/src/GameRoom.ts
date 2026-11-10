@@ -245,6 +245,9 @@ export class GameRoom {
 
     console.log(`[GameRoom ${this.code}] Disconnect timeout expired for ${player.name}. Eliminating.`);
     this.mapEngine.handlePlayerDisconnectTimeout(this.pieces, player);
+    player.isAlive = false;
+    player.isSpectator = true;
+    player.eliminatedOrder = this.eliminationOrderCounter++;
 
     // If it was currently their turn, auto-skip or auto-advance
     if (this.activeTurnPlayerId === sessionToken) {
@@ -738,6 +741,7 @@ export class GameRoom {
     this.io.to(this.code).emit('player_eliminated', {
       eliminatedPlayerId: eliminated.id,
       eliminatedPlayerName: eliminated.name,
+      eliminatedRank: eliminated.eliminatedOrder,
       conquerorPlayerId: conqueror.id,
       conquerorPlayerName: conqueror.name
     });
@@ -815,6 +819,13 @@ export class GameRoom {
           fallen.isAlive = false;
           fallen.isSpectator = true;
           fallen.eliminatedOrder = this.eliminationOrderCounter++;
+          this.io.to(this.code).emit('player_eliminated', {
+            eliminatedPlayerId: fallen.id,
+            eliminatedPlayerName: fallen.name,
+            eliminatedRank: fallen.eliminatedOrder,
+            conquerorPlayerId: 'doomsday',
+            conquerorPlayerName: 'Kıyamet Kuralı'
+          });
         }
       }
     }

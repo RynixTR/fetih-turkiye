@@ -15,6 +15,7 @@ interface HeaderProps {
   onToggleSound: () => void;
   onOpenSettings: () => void;
   onOpenHowToPlay: () => void;
+  onLeaveGame?: () => void;
   isDoomsday: boolean;
 }
 
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onOpenSettings,
   onOpenHowToPlay,
+  onLeaveGame,
   isDoomsday
 }) => {
   const alivePlayers = players.filter(p => p.isAlive && !p.isSpectator);
@@ -60,10 +62,24 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Middle: Spectator badge or Doomsday badge */}
       <div className="flex items-center gap-1.5">
         {myPlayer?.isSpectator && (
-          <span className="bg-rose-950/80 text-rose-300 border border-rose-800/80 px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
-            <EyeIcon size={13} color="#fda4af" />
-            İzliyorsun
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="bg-rose-950/80 text-rose-300 border border-rose-800/80 px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
+              <EyeIcon size={13} color="#fda4af" />
+              İzliyorsun
+            </span>
+            {onLeaveGame && (
+              <button
+                onClick={() => {
+                  haptic.tap();
+                  onLeaveGame();
+                }}
+                className="bg-slate-800 hover:bg-rose-950 text-rose-400 border border-slate-700 hover:border-rose-800 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors active:scale-95"
+                title="Oyundan Çık"
+              >
+                Çık
+              </button>
+            )}
+          </div>
         )}
 
         {isDoomsday && (
@@ -73,18 +89,25 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      {/* Right: Quick Action Controls */}
-      <div className="flex items-center gap-1">
+      {/* Right: Quick Action Controls & Alive Player Count */}
+      <div className="flex items-center gap-1.5">
+        {stage !== 'LOBBY' && (
+          <div className="bg-slate-800/80 border border-slate-700/80 px-2 py-1 rounded-lg text-xs font-bold text-slate-300 flex items-center gap-1" title="Kalan Hayatta Oyuncu">
+            <span className="text-emerald-400 font-extrabold">{alivePlayers.length}</span>
+            <span className="text-[10px] text-slate-400">Canlı</span>
+          </div>
+        )}
+
         <button
           onClick={() => {
             haptic.tap();
             onToggleSound();
           }}
-          className="w-9 h-9 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
+          className="w-8 h-8 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
           aria-label="Ses"
           title="Ses Aç/Kapat"
         >
-          {soundEnabled ? <VolumeOnIcon size={18} color="#f59e0b" /> : <VolumeOffIcon size={18} color="#94a3b8" />}
+          {soundEnabled ? <VolumeOnIcon size={16} color="#f59e0b" /> : <VolumeOffIcon size={16} color="#94a3b8" />}
         </button>
 
         <button
@@ -92,11 +115,11 @@ export const Header: React.FC<HeaderProps> = ({
             haptic.tap();
             onOpenHowToPlay();
           }}
-          className="w-9 h-9 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
+          className="w-8 h-8 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
           aria-label="Nasıl Oynanır"
           title="Nasıl Oynanır"
         >
-          <HelpIcon size={18} />
+          <HelpIcon size={16} />
         </button>
 
         <button
@@ -104,11 +127,11 @@ export const Header: React.FC<HeaderProps> = ({
             haptic.tap();
             onOpenSettings();
           }}
-          className="w-9 h-9 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
+          className="w-8 h-8 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-300 active:scale-95"
           aria-label="Ayarlar"
           title="Ayarlar"
         >
-          <SettingsIcon size={18} />
+          <SettingsIcon size={16} />
         </button>
       </div>
     </header>
