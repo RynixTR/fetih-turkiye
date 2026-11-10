@@ -9,13 +9,17 @@ interface QuestionResultScreenProps {
   result: QuestionResultView;
   myPlayer: Player | null;
   roundNumber: number;
+  remainingMs?: number;
 }
 
 export const QuestionResultScreen: React.FC<QuestionResultScreenProps> = ({
   result,
   myPlayer,
-  roundNumber
+  roundNumber,
+  remainingMs = 4000
 }) => {
+  const secondsLeft = Math.max(1, Math.ceil(remainingMs / 1000));
+
   // Play sound on reveal
   useEffect(() => {
     if (myPlayer?.lastAnswer) {
@@ -38,9 +42,14 @@ export const QuestionResultScreen: React.FC<QuestionResultScreenProps> = ({
             <span>✅</span>
             <span>DOĞRU CEVAP</span>
           </span>
-          <span className="text-xs text-slate-400 font-bold">
-            Tur {roundNumber}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-slate-800 text-amber-400 font-mono font-bold px-2 py-0.5 rounded-full border border-slate-700">
+              Haritaya: {secondsLeft}s
+            </span>
+            <span className="text-xs text-slate-400 font-bold">
+              Tur {roundNumber}
+            </span>
+          </div>
         </div>
 
         <div className="text-xl font-extrabold text-white leading-tight">

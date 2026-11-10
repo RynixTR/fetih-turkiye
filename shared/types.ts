@@ -135,6 +135,9 @@ export interface GameStateView {
   activeTurnPlayerId: string | null;
   turnTimeRemainingMs: number;
   stageTimeRemainingMs: number;
+  stageDeadline?: number;
+  turnDeadline?: number;
+  serverTime?: number;
   question: QuestionClientView | null;
   questionResult: QuestionResultView | null;
   pieces: Record<string, MapPieceState>;

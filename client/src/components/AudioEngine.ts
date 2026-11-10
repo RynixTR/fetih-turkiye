@@ -20,6 +20,10 @@ class SoundSystem {
     return this.enabled;
   }
 
+  public unlock() {
+    this.initContext();
+  }
+
   private initContext() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;

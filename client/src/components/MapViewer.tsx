@@ -16,6 +16,7 @@ interface MapViewerProps {
   confirmButtonLabel?: string;
   players: Player[];
   disabled?: boolean;
+  stage?: string;
 }
 
 export const MapViewer: React.FC<MapViewerProps> = ({
@@ -28,7 +29,8 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   onConfirmPiece,
   confirmButtonLabel = 'Seçimi Onayla',
   players,
-  disabled = false
+  disabled = false,
+  stage
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -388,6 +390,48 @@ export const MapViewer: React.FC<MapViewerProps> = ({
               </div>
             )}
 
+            {/* Action Dynamic Preview & Outcome Callout */}
+            {isMyTurn && (
+              <div className={`p-2.5 rounded-xl border text-xs leading-relaxed ${
+                !isSelectedLegal
+                  ? 'bg-rose-950/40 border-rose-800/60 text-rose-300'
+                  : stage === 'CAPITAL_SELECTION'
+                  ? 'bg-amber-950/40 border-amber-500/50 text-amber-200'
+                  : selectedState?.isCapital
+                  ? 'bg-rose-950/50 border-rose-600/70 text-rose-200'
+                  : ownerPlayer
+                  ? 'bg-orange-950/40 border-orange-500/50 text-orange-200'
+                  : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+              }`}>
+                {!isSelectedLegal ? (
+                  <div className="font-bold flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>Bu bölge sınırlarına komşu değil! Sadece sarı çizgilerle parlayan komşu yerleri seçebilirsin.</span>
+                  </div>
+                ) : stage === 'CAPITAL_SELECTION' ? (
+                  <div>
+                    <strong className="block text-amber-400 mb-0.5">👑 Başkent Karargahı Olacak</strong>
+                    Bu bölge senin ana kalen olacak. 3 canını korumaya çalışacaksın; başkentin düşerse elenirsin!
+                  </div>
+                ) : selectedState?.isCapital ? (
+                  <div>
+                    <strong className="block text-rose-400 mb-0.5">💥 Düşman Kalesine Kuşatma</strong>
+                    {ownerPlayer?.name}'in başkentine 1 hasar verilecek ({ownerPlayer?.capitalHp} ❤️ ➔ {(ownerPlayer?.capitalHp || 1) - 1} ❤️). Canı 0 olursa elenecek ve tüm toprakları sana geçecek!
+                  </div>
+                ) : ownerPlayer ? (
+                  <div>
+                    <strong className="block text-orange-400 mb-0.5">⚔️ Rakip Toprağını Gasp Etme</strong>
+                    Bu bölge {ownerPlayer.name}'den alınarak senin olacak ve bu turun sonuna kadar kalkanla korunacak.
+                  </div>
+                ) : (
+                  <div>
+                    <strong className="block text-emerald-400 mb-0.5">🏳️ Boş Bölgeyi Topraklarına Katma</strong>
+                    Burası doğrudan senin sınırlarına dahil olacak (+1 Toprak).
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Confirm button */}
             {isMyTurn && (
               <button
@@ -397,30 +441,58 @@ export const MapViewer: React.FC<MapViewerProps> = ({
                   onConfirmPiece(selectedPieceId);
                 }}
                 className={`w-full py-3.5 rounded-xl font-extrabold text-base flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-97 ${
-                  isSelectedLegal
+                  !isSelectedLegal
+                    ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                    : stage === 'CAPITAL_SELECTION'
                     ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-amber-500/25'
-                    : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                    : selectedState?.isCapital
+                    ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-rose-500/25 animate-pulse'
+                    : ownerPlayer
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 shadow-orange-500/25'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-emerald-500/25'
                 }`}
               >
-                {isSelectedLegal ? (
+                {!isSelectedLegal ? (
+                  <span>Komşu Olmayan Parça Seçilemez</span>
+                ) : stage === 'CAPITAL_SELECTION' ? (
                   <>
-                    <span>⚡</span>
-                    <span>{confirmButtonLabel}</span>
+                    <span>👑</span>
+                    <span>{selectedDef.name} Bölgesini Başkent Yap</span>
+                  </>
+                ) : selectedState?.isCapital ? (
+                  <>
+                    <span>🔥</span>
+                    <span>{ownerPlayer?.name} Başkentine Saldır (-1 Can)</span>
+                  </>
+                ) : ownerPlayer ? (
+                  <>
+                    <span>⚔️</span>
+                    <span>{selectedDef.name} Toprağını Ele Geçir</span>
                   </>
                 ) : (
-                  <span>Komşu Olmayan Parça Seçilemez</span>
+                  <>
+                    <span>🏳️</span>
+                    <span>{selectedDef.name} Bölgesini Fethet</span>
+                  </>
                 )}
               </button>
             )}
           </div>
         ) : (
-          <div className="py-2 text-center text-sm text-slate-400">
+          <div className="py-2.5 text-center flex flex-col items-center gap-1">
             {isMyTurn ? (
-              <span className="text-amber-400 font-semibold animate-pulse">
-                👉 Hamle yapmak için parlayan bir parçaya dokun
-              </span>
+              <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-center gap-2 text-amber-300 font-bold text-xs animate-pulse">
+                <span>👉</span>
+                <span>
+                  {stage === 'CAPITAL_SELECTION'
+                    ? 'Haritada sarı çizgilerle parlayan boş bir bölgeye dokunarak başkentini seç!'
+                    : 'Haritada sarı çizgilerle parlayan komşu parçalardan birine dokunarak hedefini belirle!'}
+                </span>
+              </div>
             ) : (
-              <span>Haritayı incelemek için parçalara dokunabilir veya yakınlaştırabilirsin</span>
+              <span className="text-xs text-slate-400">
+                Haritayı incelemek için parçalara dokunabilir veya çift parmakla yakınlaştırabilirsin.
+              </span>
             )}
           </div>
         )}

@@ -46,8 +46,11 @@ export const App: React.FC = () => {
     sessionTokenRef.current = sessionToken;
   }, [sessionToken]);
 
-  // Time ticker for countdown bars
-  const [, setTick] = useState<number>(0);
+  // Live Countdown Clocks (High-precision synchronized timers)
+  const stageDeadlineRef = useRef<number>(0);
+  const turnDeadlineRef = useRef<number>(0);
+  const [liveStageTimeMs, setLiveStageTimeMs] = useState<number>(0);
+  const [liveTurnTimeMs, setLiveTurnTimeMs] = useState<number>(0);
 
   // WakeLock reference so mobile phone screen doesn't turn off
   const wakeLockRef = useRef<any>(null);
@@ -79,12 +82,23 @@ export const App: React.FC = () => {
     }
   }, [gameState?.stage]);
 
-  // Tick interval to smoothly update timers on client
+  // High-precision 50ms tick interval for real-time live countdowns
   useEffect(() => {
     const timer = setInterval(() => {
-      setTick(t => t + 1);
-    }, 100);
+      const now = Date.now();
+      setLiveStageTimeMs(Math.max(0, stageDeadlineRef.current - now));
+      setLiveTurnTimeMs(Math.max(0, turnDeadlineRef.current - now));
+    }, 50);
     return () => clearInterval(timer);
+  }, []);
+
+  // Unlock Web Audio API on first user interaction (Mobile Safari & Chrome compliance)
+  useEffect(() => {
+    const handleFirstTouch = () => {
+      sound.unlock();
+    };
+    window.addEventListener('pointerdown', handleFirstTouch, { once: true });
+    return () => window.removeEventListener('pointerdown', handleFirstTouch);
   }, []);
 
   // Check /health endpoint on start for cold-starts
@@ -159,6 +173,18 @@ export const App: React.FC = () => {
       setGameState(state);
       setIsLoading(false);
       setErrorMessage('');
+
+      const now = Date.now();
+      const serverOffset = state.serverTime ? (now - state.serverTime) : 0;
+      stageDeadlineRef.current = state.stageDeadline
+        ? (state.stageDeadline + serverOffset)
+        : (now + (state.stageTimeRemainingMs || 0));
+      turnDeadlineRef.current = state.turnDeadline
+        ? (state.turnDeadline + serverOffset)
+        : (now + (state.turnTimeRemainingMs || 0));
+
+      setLiveStageTimeMs(Math.max(0, stageDeadlineRef.current - now));
+      setLiveTurnTimeMs(Math.max(0, turnDeadlineRef.current - now));
     });
 
     newSocket.on('kicked', data => {
@@ -336,14 +362,14 @@ export const App: React.FC = () => {
           />
         ) : gameState.stage === 'COUNTDOWN' ? (
           <CountdownScreen
-            remainingMs={gameState.stageTimeRemainingMs}
+            remainingMs={liveStageTimeMs}
             level={gameState.mapLevel}
             levelDescription={gameState.mapLevelDescription}
           />
         ) : gameState.stage === 'QUESTION' && gameState.question ? (
           <QuestionScreen
             question={gameState.question}
-            stageTimeRemainingMs={gameState.stageTimeRemainingMs}
+            stageTimeRemainingMs={liveStageTimeMs}
             myPlayer={myPlayer}
             onSubmitAnswer={handleSubmitAnswer}
             onUseHint={handleUseHint}
@@ -353,6 +379,7 @@ export const App: React.FC = () => {
             result={gameState.questionResult}
             myPlayer={myPlayer}
             roundNumber={gameState.roundNumber}
+            remainingMs={liveStageTimeMs}
           />
         ) : (gameState.stage === 'CAPITAL_SELECTION' || gameState.stage === 'TURN_MOVE' || gameState.stage === 'ROUND_SUMMARY') ? (
           <TurnMoveScreen
@@ -361,7 +388,7 @@ export const App: React.FC = () => {
             pieces={gameState.pieces}
             adjacency={gameState.adjacency}
             activeTurnPlayerId={gameState.activeTurnPlayerId}
-            turnTimeRemainingMs={gameState.turnTimeRemainingMs}
+            turnTimeRemainingMs={liveTurnTimeMs}
             players={gameState.players}
             myPlayer={myPlayer}
             onSelectCapital={handleSelectCapital}
